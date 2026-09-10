@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/buku.js": {
-      "runtime": "nodejs22.x"
-    }
-  }
-}
