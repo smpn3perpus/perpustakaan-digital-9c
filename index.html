@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -6,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Perpustakaan Digital Kelas 9C</title>
+
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 *{
@@ -164,6 +166,23 @@ header p{
     display:none;
 }
 
+.loading{
+    background:white;
+    padding:30px;
+    border-radius:14px;
+    text-align:center;
+    color:#6b7280;
+}
+
+.error{
+    background:#fee2e2;
+    color:#991b1b;
+    padding:20px;
+    border-radius:14px;
+    text-align:center;
+    display:none;
+}
+
 footer{
     margin-top:50px;
     padding:20px;
@@ -174,12 +193,17 @@ footer{
 }
 
 @media(max-width:600px){
+
     header h1{
         font-size:23px;
     }
 
     .container{
         padding:0 14px;
+    }
+
+    .buttons{
+        flex-direction:column;
     }
 }
 </style>
@@ -205,6 +229,14 @@ footer{
 
     <h2 class="section-title">📖 Koleksi Buku</h2>
 
+    <div id="loadingMessage" class="loading">
+        ⏳ Memuat koleksi buku...
+    </div>
+
+    <div id="errorMessage" class="error">
+        ❌ Gagal mengambil data buku dari Supabase.
+    </div>
+
     <div id="bookGrid" class="book-grid"></div>
 
     <div id="emptyMessage" class="empty">
@@ -221,29 +253,106 @@ footer{
 
 /*
 =========================================================
-DATA BUKU SEMENTARA
+KONFIGURASI SUPABASE
 =========================================================
 
-Nanti bagian ini akan kita ganti dengan data dari
-MongoDB melalui Backend/API.
+GANTI DUA NILAI DI BAWAH INI DENGAN:
 
-JANGAN memasukkan MONGODB_URI atau password MongoDB
-ke dalam file HTML ini.
+1. Project URL
+2. Publishable key
+
+JANGAN gunakan service_role key.
+JANGAN masukkan password database.
+=========================================================
 */
 
-const buku = [
-    {
-        judul: "Laskar Pelangi",
-        penulis: "Andrea Hirata",
-        penerbit: "Bentang Pustaka",
-        tahun_terbit: 2005,
-        kategori: "Novel",
-        stok: 5,
+const SUPABASE_URL = "MASUKKAN_PROJECT_URL_ANDA";
 
-        file_url:
-        "https://drive.google.com/file/d/1-KAKsUAyTStBx1MzhNtHlQK1vhrLeP1D/view?usp=sharing"
+const SUPABASE_KEY = "MASUKKAN_PUBLISHABLE_KEY_ANDA";
+
+
+/*
+=========================================================
+INISIALISASI SUPABASE
+=========================================================
+*/
+
+const { createClient } = supabase;
+
+const db = createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+
+/*
+=========================================================
+DATA BUKU
+=========================================================
+*/
+
+let buku = [];
+
+
+/*
+=========================================================
+AMBIL DATA BUKU DARI SUPABASE
+=========================================================
+*/
+
+async function ambilBuku(){
+
+    const loading =
+        document.getElementById("loadingMessage");
+
+    const error =
+        document.getElementById("errorMessage");
+
+    try{
+
+        loading.style.display = "block";
+        error.style.display = "none";
+
+        const { data, error: supabaseError } =
+            await db
+                .from("buku")
+                .select("*")
+                .order("id", { ascending: true });
+
+
+        if(supabaseError){
+
+            console.error(
+                "Supabase Error:",
+                supabaseError
+            );
+
+            throw supabaseError;
+        }
+
+
+        buku = data || [];
+
+
+        loading.style.display = "none";
+
+
+        tampilkanBuku(buku);
+
+
+    }catch(err){
+
+        console.error(
+            "Gagal mengambil buku:",
+            err
+        );
+
+        loading.style.display = "none";
+
+        error.style.display = "block";
+
     }
-];
+}
 
 
 /*
@@ -254,23 +363,56 @@ TAMPILKAN BUKU
 
 function tampilkanBuku(data){
 
-    const grid = document.getElementById("bookGrid");
-    const empty = document.getElementById("emptyMessage");
+    const grid =
+        document.getElementById("bookGrid");
+
+    const empty =
+        document.getElementById("emptyMessage");
+
 
     grid.innerHTML = "";
 
-    if(data.length === 0){
+
+    if(!data || data.length === 0){
+
         empty.style.display = "block";
+
         return;
     }
 
+
     empty.style.display = "none";
+
 
     data.forEach((book) => {
 
-        const card = document.createElement("div");
+        const card =
+            document.createElement("div");
 
         card.className = "book-card";
+
+
+        const judul =
+            book.judul || "Tanpa judul";
+
+        const penulis =
+            book.penulis || "-";
+
+        const penerbit =
+            book.penerbit || "-";
+
+        const tahun =
+            book.tahun_terbit || "-";
+
+        const kategori =
+            book.kategori || "-";
+
+        const stok =
+            book.stok ?? 0;
+
+        const fileUrl =
+            book.file_url || "#";
+
 
         card.innerHTML = `
 
@@ -278,43 +420,71 @@ function tampilkanBuku(data){
                 📖
             </div>
 
-            <h3>${escapeHTML(book.judul)}</h3>
+            <h3>
+                ${escapeHTML(judul)}
+            </h3>
 
             <div class="info">
+
                 <strong>Penulis:</strong>
-                ${escapeHTML(book.penulis)}
+                ${escapeHTML(penulis)}
+
                 <br>
 
                 <strong>Penerbit:</strong>
-                ${escapeHTML(book.penerbit)}
+                ${escapeHTML(penerbit)}
+
                 <br>
 
                 <strong>Tahun:</strong>
-                ${book.tahun_terbit}
+                ${escapeHTML(tahun)}
+
                 <br>
 
                 <strong>Stok:</strong>
-                ${book.stok}
+                ${escapeHTML(stok)}
+
             </div>
 
             <span class="category">
-                ${escapeHTML(book.kategori)}
+                ${escapeHTML(kategori)}
             </span>
 
             <div class="buttons">
 
-                <a
-                    class="btn btn-read"
-                    href="${book.file_url}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    📖 Baca Buku
-                </a>
+                ${
+                    fileUrl && fileUrl !== "#"
+
+                    ?
+
+                    `
+                    <a
+                        class="btn btn-read"
+                        href="${escapeHTML(fileUrl)}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        📖 Baca Buku
+                    </a>
+                    `
+
+                    :
+
+                    `
+                    <button
+                        class="btn btn-read"
+                        disabled
+                        style="opacity:.5;cursor:not-allowed;"
+                    >
+                        📖 Belum tersedia
+                    </button>
+                    `
+                }
+
 
                 <button
                     class="btn btn-info"
-                    onclick="lihatDetail('${escapeAttribute(book.judul)}')"
+                    onclick="lihatDetail(${JSON.stringify(judul)})"
                 >
                     ℹ️ Detail
                 </button>
@@ -322,7 +492,9 @@ function tampilkanBuku(data){
             </div>
         `;
 
+
         grid.appendChild(card);
+
     });
 }
 
@@ -342,15 +514,32 @@ function cariBuku(){
         .toLowerCase()
         .trim();
 
-    const hasil = buku.filter(book => {
 
-        return (
-            String(book.judul).toLowerCase().includes(keyword) ||
-            String(book.penulis).toLowerCase().includes(keyword) ||
-            String(book.kategori).toLowerCase().includes(keyword)
-        );
+    const hasil =
+        buku.filter(book => {
 
-    });
+            return (
+
+                String(book.judul || "")
+                .toLowerCase()
+                .includes(keyword)
+
+                ||
+
+                String(book.penulis || "")
+                .toLowerCase()
+                .includes(keyword)
+
+                ||
+
+                String(book.kategori || "")
+                .toLowerCase()
+                .includes(keyword)
+
+            );
+
+        });
+
 
     tampilkanBuku(hasil);
 }
@@ -364,24 +553,44 @@ DETAIL BUKU
 
 function lihatDetail(judul){
 
-    const book = buku.find(
-        item => item.judul === judul
-    );
+    const book =
+        buku.find(
+            item => item.judul === judul
+        );
+
 
     if(!book) return;
 
+
     alert(
-        "📚 " + book.judul +
+
+        "📚 " + (book.judul || "-") +
+
         "\n\n" +
-        "Penulis: " + book.penulis +
+
+        "Penulis: " +
+        (book.penulis || "-") +
+
         "\n" +
-        "Penerbit: " + book.penerbit +
+
+        "Penerbit: " +
+        (book.penerbit || "-") +
+
         "\n" +
-        "Tahun: " + book.tahun_terbit +
+
+        "Tahun: " +
+        (book.tahun_terbit || "-") +
+
         "\n" +
-        "Kategori: " + book.kategori +
+
+        "Kategori: " +
+        (book.kategori || "-") +
+
         "\n" +
-        "Stok: " + book.stok
+
+        "Stok: " +
+        (book.stok ?? 0)
+
     );
 }
 
@@ -395,18 +604,16 @@ KEAMANAN TAMPILAN HTML
 function escapeHTML(value){
 
     return String(value)
+
         .replace(/&/g, "&amp;")
+
         .replace(/</g, "&lt;")
+
         .replace(/>/g, "&gt;")
+
         .replace(/"/g, "&quot;")
+
         .replace(/'/g, "&#039;");
-}
-
-function escapeAttribute(value){
-
-    return String(value)
-        .replace(/\\/g, "\\\\")
-        .replace(/'/g, "\\'");
 }
 
 
@@ -416,10 +623,9 @@ JALANKAN APLIKASI
 =========================================================
 */
 
-tampilkanBuku(buku);
+ambilBuku();
 
 </script>
 
 </body>
 </html>
-```
