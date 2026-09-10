@@ -1,0 +1,425 @@
+```html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Perpustakaan Digital Kelas 9C</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f4f7fb;
+    color:#1f2937;
+}
+
+header{
+    background:linear-gradient(135deg,#2563eb,#1d4ed8);
+    color:white;
+    padding:28px 20px;
+    text-align:center;
+    box-shadow:0 3px 10px rgba(0,0,0,.15);
+}
+
+header h1{
+    font-size:28px;
+    margin-bottom:8px;
+}
+
+header p{
+    font-size:15px;
+    opacity:.95;
+}
+
+.container{
+    max-width:1100px;
+    margin:30px auto;
+    padding:0 20px;
+}
+
+.search-box{
+    background:white;
+    padding:18px;
+    border-radius:14px;
+    box-shadow:0 3px 12px rgba(0,0,0,.08);
+    margin-bottom:25px;
+}
+
+.search-box input{
+    width:100%;
+    padding:13px 15px;
+    border:1px solid #d1d5db;
+    border-radius:10px;
+    font-size:15px;
+    outline:none;
+}
+
+.search-box input:focus{
+    border-color:#2563eb;
+}
+
+.section-title{
+    margin-bottom:18px;
+    font-size:22px;
+}
+
+.book-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:20px;
+}
+
+.book-card{
+    background:white;
+    border-radius:16px;
+    padding:20px;
+    box-shadow:0 4px 15px rgba(0,0,0,.08);
+    transition:.2s;
+}
+
+.book-card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 7px 20px rgba(0,0,0,.12);
+}
+
+.book-icon{
+    width:70px;
+    height:85px;
+    background:#2563eb;
+    color:white;
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:35px;
+    margin-bottom:15px;
+}
+
+.book-card h3{
+    font-size:20px;
+    margin-bottom:10px;
+}
+
+.info{
+    font-size:14px;
+    line-height:1.7;
+    color:#4b5563;
+}
+
+.category{
+    display:inline-block;
+    background:#dbeafe;
+    color:#1d4ed8;
+    padding:5px 10px;
+    border-radius:20px;
+    font-size:12px;
+    margin:10px 0;
+}
+
+.buttons{
+    display:flex;
+    gap:8px;
+    margin-top:15px;
+}
+
+.btn{
+    flex:1;
+    text-align:center;
+    text-decoration:none;
+    border:none;
+    border-radius:9px;
+    padding:11px 8px;
+    font-weight:bold;
+    cursor:pointer;
+    font-size:13px;
+}
+
+.btn-read{
+    background:#16a34a;
+    color:white;
+}
+
+.btn-read:hover{
+    background:#15803d;
+}
+
+.btn-info{
+    background:#e5e7eb;
+    color:#374151;
+}
+
+.empty{
+    background:white;
+    padding:30px;
+    border-radius:14px;
+    text-align:center;
+    color:#6b7280;
+    display:none;
+}
+
+footer{
+    margin-top:50px;
+    padding:20px;
+    background:#111827;
+    color:#d1d5db;
+    text-align:center;
+    font-size:13px;
+}
+
+@media(max-width:600px){
+    header h1{
+        font-size:23px;
+    }
+
+    .container{
+        padding:0 14px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>📚 Perpustakaan Digital Kelas 9C</h1>
+    <p>SMP Negeri 3 Sibolga</p>
+</header>
+
+<main class="container">
+
+    <div class="search-box">
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="🔎 Cari judul, penulis, atau kategori buku..."
+            oninput="cariBuku()"
+        >
+    </div>
+
+    <h2 class="section-title">📖 Koleksi Buku</h2>
+
+    <div id="bookGrid" class="book-grid"></div>
+
+    <div id="emptyMessage" class="empty">
+        Buku yang dicari tidak ditemukan.
+    </div>
+
+</main>
+
+<footer>
+    Dibuat oleh Mr. Rahmat Batubara, S.T.P.
+</footer>
+
+<script>
+
+/*
+=========================================================
+DATA BUKU SEMENTARA
+=========================================================
+
+Nanti bagian ini akan kita ganti dengan data dari
+MongoDB melalui Backend/API.
+
+JANGAN memasukkan MONGODB_URI atau password MongoDB
+ke dalam file HTML ini.
+*/
+
+const buku = [
+    {
+        judul: "Laskar Pelangi",
+        penulis: "Andrea Hirata",
+        penerbit: "Bentang Pustaka",
+        tahun_terbit: 2005,
+        kategori: "Novel",
+        stok: 5,
+
+        file_url:
+        "https://drive.google.com/file/d/1-KAKsUAyTStBx1MzhNtHlQK1vhrLeP1D/view?usp=sharing"
+    }
+];
+
+
+/*
+=========================================================
+TAMPILKAN BUKU
+=========================================================
+*/
+
+function tampilkanBuku(data){
+
+    const grid = document.getElementById("bookGrid");
+    const empty = document.getElementById("emptyMessage");
+
+    grid.innerHTML = "";
+
+    if(data.length === 0){
+        empty.style.display = "block";
+        return;
+    }
+
+    empty.style.display = "none";
+
+    data.forEach((book) => {
+
+        const card = document.createElement("div");
+
+        card.className = "book-card";
+
+        card.innerHTML = `
+
+            <div class="book-icon">
+                📖
+            </div>
+
+            <h3>${escapeHTML(book.judul)}</h3>
+
+            <div class="info">
+                <strong>Penulis:</strong>
+                ${escapeHTML(book.penulis)}
+                <br>
+
+                <strong>Penerbit:</strong>
+                ${escapeHTML(book.penerbit)}
+                <br>
+
+                <strong>Tahun:</strong>
+                ${book.tahun_terbit}
+                <br>
+
+                <strong>Stok:</strong>
+                ${book.stok}
+            </div>
+
+            <span class="category">
+                ${escapeHTML(book.kategori)}
+            </span>
+
+            <div class="buttons">
+
+                <a
+                    class="btn btn-read"
+                    href="${book.file_url}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    📖 Baca Buku
+                </a>
+
+                <button
+                    class="btn btn-info"
+                    onclick="lihatDetail('${escapeAttribute(book.judul)}')"
+                >
+                    ℹ️ Detail
+                </button>
+
+            </div>
+        `;
+
+        grid.appendChild(card);
+    });
+}
+
+
+/*
+=========================================================
+PENCARIAN BUKU
+=========================================================
+*/
+
+function cariBuku(){
+
+    const keyword =
+        document
+        .getElementById("searchInput")
+        .value
+        .toLowerCase()
+        .trim();
+
+    const hasil = buku.filter(book => {
+
+        return (
+            String(book.judul).toLowerCase().includes(keyword) ||
+            String(book.penulis).toLowerCase().includes(keyword) ||
+            String(book.kategori).toLowerCase().includes(keyword)
+        );
+
+    });
+
+    tampilkanBuku(hasil);
+}
+
+
+/*
+=========================================================
+DETAIL BUKU
+=========================================================
+*/
+
+function lihatDetail(judul){
+
+    const book = buku.find(
+        item => item.judul === judul
+    );
+
+    if(!book) return;
+
+    alert(
+        "📚 " + book.judul +
+        "\n\n" +
+        "Penulis: " + book.penulis +
+        "\n" +
+        "Penerbit: " + book.penerbit +
+        "\n" +
+        "Tahun: " + book.tahun_terbit +
+        "\n" +
+        "Kategori: " + book.kategori +
+        "\n" +
+        "Stok: " + book.stok
+    );
+}
+
+
+/*
+=========================================================
+KEAMANAN TAMPILAN HTML
+=========================================================
+*/
+
+function escapeHTML(value){
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function escapeAttribute(value){
+
+    return String(value)
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'");
+}
+
+
+/*
+=========================================================
+JALANKAN APLIKASI
+=========================================================
+*/
+
+tampilkanBuku(buku);
+
+</script>
+
+</body>
+</html>
+```
